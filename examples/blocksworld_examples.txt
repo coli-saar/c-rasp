@@ -1,0 +1,11 @@
+// Goal already true in the initial state; the plan is empty.
+$clear 2 clear 2 clear 3 handempty on-table 1 on-table 3 on 2 1 @ @ clear 2 @
+// Valid plan: unstack 2 from 1, put down 2, pick up 3, then stack 3 on 1.
+$clear 2 clear 2 clear 3 handempty on-table 1 on-table 3 on 2 1 @ unstack 2 1 putdown 2 pickup 3 stack 3 1 @ on 3 1 @
+// Invalid precondition: clear 2 is absent before unstack 2 1.
+$clear 2 clear 3 handempty on-table 1 on-table 3 on 2 1 @ unstack 2 1 putdown 2 pickup 3 stack 3 1 @ on 3 1 @
+// Invalid precondition: unstack arguments do not match the initial on fact.
+$clear 2 clear 2 clear 3 handempty on-table 1 on-table 3 on 2 1 @ unstack 3 1 putdown 2 pickup 3 stack 3 1 @ on 3 1 @
+// Preconditions hold, but on 3 2 is never reached.
+$clear 2 clear 2 clear 3 handempty on-table 1 on-table 3 on 2 1 @ unstack 2 1 putdown 2 pickup 3 stack 3 1 @ on 3 2 @
+

@@ -1,4 +1,4 @@
-# Generated from crasp.g4 by ANTLR 4.13.1
+# Generated from crasp.g4 by ANTLR 4.13.2
 from antlr4 import *
 if "." in __name__:
     from .craspParser import craspParser
@@ -26,6 +26,31 @@ class craspVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by craspParser#count_expr.
     def visitCount_expr(self, ctx:craspParser.Count_exprContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by craspParser#match_bound.
+    def visitMatch_bound(self, ctx:craspParser.Match_boundContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by craspParser#match_expr.
+    def visitMatch_expr(self, ctx:craspParser.Match_exprContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by craspParser#match_constraints.
+    def visitMatch_constraints(self, ctx:craspParser.Match_constraintsContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by craspParser#offset_list.
+    def visitOffset_list(self, ctx:craspParser.Offset_listContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by craspParser#signed_integer.
+    def visitSigned_integer(self, ctx:craspParser.Signed_integerContext):
         return self.visitChildren(ctx)
 
 

@@ -37,6 +37,10 @@ def parse_args():
         help="Filename for tracing output (use filename extensions *.txt or *.html or *.htm)"
     )
 
+    parser.add_argument(
+        "--c-star", action="store_true",
+        help="Use C*-RASP: numeric tokens are object IDs, accessible only through match"
+    )
     args = parser.parse_args()
 
     return args
@@ -64,7 +68,7 @@ for line in input_iterable:
     if not line.startswith("//"):
         tokens = line.strip().split()
         if len(tokens) > 0:
-            result = program.execute(tokens, tracing=tr)
+            result = program.execute(tokens, tracing=tr, c_star=args.c_star)
             print(f"{input_id} {line.strip()}: {result}")
             input_id += 1
 

@@ -24,3 +24,15 @@ def pred4(i: int, j: int) -> bool:
 def pos_even(i: int) -> bool:
     return i%2 == 0
 
+def arity0(i: int, j: int) -> bool:
+    return i == j
+
+def arity1(i:int, j:int) -> bool:
+    return i==j+1
+
+def arity2(i:int, j:int) -> bool:
+    return i==j+2
+
+def arity3(i:int, j:int) -> bool:
+    return i==j+3
+

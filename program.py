@@ -10,9 +10,24 @@ import predefined
 
 @dataclass
 class Environment:
-    tokens: list[str]
+    tokens: list[Union[str, int]]
     vars: dict[str, Union[list[bool], list[int]]] = field(default_factory=dict)
-    binary_functions: dict[str, Callable[[int, int], bool]] = field(default_factory=dict) # values have to evaluated at runtime
+    c_star: bool = False
+    binary_functions: dict[str, Callable[[int, int], bool]] = field(default_factory=dict)
+
+
+def parse_token(token: Union[str, int]) -> Union[str, int]:
+    if isinstance(token, int):
+        if token < 0:
+            raise ValueError("Object IDs must be nonnegative integers")
+        return token
+    try:
+        value = int(token)
+    except ValueError:
+        return token
+    if value < 0:
+        raise ValueError("Object IDs must be nonnegative integers")
+    return value
 
 
 class BoolExpr:
@@ -39,6 +54,13 @@ class StringLiteral(BoolExpr):
     value: str
 
     def evaluate(self, env: Environment) -> list[bool]:
+        if env.c_star:
+            try:
+                int(self.value)
+            except ValueError:
+                pass
+            else:
+                raise ValueError("Object IDs cannot be queried as literals in C*-RASP; use match")
         return [tok == self.value for tok in env.tokens]
 
 @dataclass
@@ -129,9 +151,57 @@ class Count(CountExpr):
         return counts
 
 @dataclass
-class GuardedCount(CountExpr):
-    guard: str
+class MatchPredicate:
+    # Definition 3.3: c[j - delta[k]] = c[i - gamma[k]] + tau[k].
+    constraints: list[tuple[int, int, int]]
+
+    def __post_init__(self):
+        if any(type(item) is not tuple or len(item) != 3 for item in self.constraints):
+            raise ValueError("Match constraints must be (delta, gamma, tau) tuples")
+        if any(type(offset) is not int for item in self.constraints for offset in item):
+            raise ValueError("Match offsets must be integers")
+        if any(delta < 0 or gamma < 0 for delta, gamma, _ in self.constraints):
+            raise ValueError("Match position offsets must be nonnegative lookbacks")
+
+    def matches(self, tokens: list[Union[str, int]], i: int, j: int) -> bool:
+        for delta, gamma, tau in self.constraints:
+            earlier, current = j - delta, i - gamma
+            if not (0 <= earlier < len(tokens) and 0 <= current < len(tokens)):
+                return False
+            left, right = tokens[earlier], tokens[current]
+            if type(left) is not int or type(right) is not int:
+                return False
+            if left != right + tau:
+                return False
+        return True
+
+
+@dataclass
+class Match(CountExpr):
+    predicate: MatchPredicate
     expr: BoolExpr
+    inclusive: bool = True
+
+    def evaluate(self, env: Environment) -> list[int]:
+        if not env.c_star:
+            raise ValueError("match requires C*-RASP mode (--c-star)")
+        bools = self.expr.evaluate(env)
+        counts = []
+
+        for i in range(len(env.tokens)):
+            count = 0
+            for j in range(i + int(self.inclusive)):
+                if bools[j] and self.predicate.matches(env.tokens, i, j):
+                    count += 1
+            counts.append(count)
+
+        return counts
+
+
+@dataclass
+class GuardedCount(CountExpr):
+    expr: BoolExpr
+    guard: str
 
     def evaluate(self, env: Environment) -> list[int]:
         bools: list[bool] = self.expr.evaluate(env) # value of expr at each position
@@ -142,9 +212,12 @@ class GuardedCount(CountExpr):
         for i, val in enumerate(bools):
             count_of_trues = 0
 
-            for j in range(i+1):
-                if bools[j] and guard_func(i, j):
-                    count_of_trues += 1
+            for j in range(i + 1):
+                if not bools[j]:
+                    continue
+                if not guard_func(i, j):
+                    continue
+                count_of_trues += 1
 
             counts.append(count_of_trues)
 
@@ -214,10 +287,13 @@ class Assignment:
 class Program:
     statements: list[Assignment]
     imports: list[str]
+    c_star: bool = False
 
-    def execute(self, tokens, verbose=False, tracing: Trace = None) -> bool:
+    def execute(self, tokens, verbose=False, tracing: Trace = None, c_star: bool = False) -> bool:
+        c_star = c_star or self.c_star
         # initialize empty environment with the given tokens
-        env = Environment(tokens)
+        tokens = [parse_token(token) for token in tokens] if c_star else list(tokens)
+        env = Environment(tokens, c_star=c_star)
         most_recent_value = None
 
         # import predefined functions
@@ -258,6 +334,9 @@ class Program:
                 print(f"Statement: {assignment}", file=sys.stderr)
                 traceback.print_exc()
                 sys.exit(1)
+
+        if c_star and (not most_recent_value or type(most_recent_value[-1]) is not bool):
+            raise ValueError("The final C*-RASP statement must be Boolean")
 
         if tracing is not None:
             tracing.accept_result(most_recent_value[-1])

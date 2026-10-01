@@ -1,4 +1,4 @@
-# Generated from crasp.g4 by ANTLR 4.13.1
+# Generated from crasp.g4 by ANTLR 4.13.2
 from antlr4 import *
 if "." in __name__:
     from .craspParser import craspParser
@@ -41,6 +41,51 @@ class craspListener(ParseTreeListener):
 
     # Exit a parse tree produced by craspParser#count_expr.
     def exitCount_expr(self, ctx:craspParser.Count_exprContext):
+        pass
+
+
+    # Enter a parse tree produced by craspParser#match_bound.
+    def enterMatch_bound(self, ctx:craspParser.Match_boundContext):
+        pass
+
+    # Exit a parse tree produced by craspParser#match_bound.
+    def exitMatch_bound(self, ctx:craspParser.Match_boundContext):
+        pass
+
+
+    # Enter a parse tree produced by craspParser#match_expr.
+    def enterMatch_expr(self, ctx:craspParser.Match_exprContext):
+        pass
+
+    # Exit a parse tree produced by craspParser#match_expr.
+    def exitMatch_expr(self, ctx:craspParser.Match_exprContext):
+        pass
+
+
+    # Enter a parse tree produced by craspParser#match_constraints.
+    def enterMatch_constraints(self, ctx:craspParser.Match_constraintsContext):
+        pass
+
+    # Exit a parse tree produced by craspParser#match_constraints.
+    def exitMatch_constraints(self, ctx:craspParser.Match_constraintsContext):
+        pass
+
+
+    # Enter a parse tree produced by craspParser#offset_list.
+    def enterOffset_list(self, ctx:craspParser.Offset_listContext):
+        pass
+
+    # Exit a parse tree produced by craspParser#offset_list.
+    def exitOffset_list(self, ctx:craspParser.Offset_listContext):
+        pass
+
+
+    # Enter a parse tree produced by craspParser#signed_integer.
+    def enterSigned_integer(self, ctx:craspParser.Signed_integerContext):
+        pass
+
+    # Exit a parse tree produced by craspParser#signed_integer.
+    def exitSigned_integer(self, ctx:craspParser.Signed_integerContext):
         pass
 
 

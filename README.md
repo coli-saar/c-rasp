@@ -58,6 +58,43 @@ Note that unlike in Huang et al., we count the first input token as position 0 a
 
 
 
+## C*-RASP
+
+Enable the split alphabet with `#cstar` in the program or `--c-star` on the
+command line (or `execute(..., c_star=True)`). Without either flag, programs
+retain the previous C-RASP behavior.
+
+```
+#cstar
+has_increment_pair = (# [j <= i, match([(0, 0, -1)])] true) > 0
+```
+
+Numeric input tokens become nonnegative object IDs. Quoted literals query only
+fixed-alphabet symbols; numeric literal queries are rejected. Default C-RASP
+mode retains the original string-token behavior. The final C*-RASP statement
+must be Boolean.
+
+`match([(delta, gamma, tau), ...])` follows [Definition 3.3](https://arxiv.org/html/2603.19954v2#S3.SS2):
+`c[j-delta] == c[i-gamma] + tau` for every tuple. `delta` and `gamma` are
+nonnegative lookbacks, while `tau` is signed. Out-of-bounds or non-object
+comparisons are false. An empty list gives true. As a count expression, match
+defaults to **j <= i**; write `j < i` explicitly for prior positions only.
+
+Existing guarded counts can use an imported binary predicate. Match counts can
+optionally include a Boolean body evaluated at `j`; if omitted, the body defaults
+to `true`. If the bound is omitted, it defaults to `j <= i`; use `j < i` to
+count only earlier positions:
+
+```
+#import pos_even
+n = # [j < i, match([(0, 0, 0)])] pos_even
+```
+
+The body is evaluated at `j`; `pos_even` supplies its Boolean value at each
+position. The body may be omitted, as in `# [j <= i, match([...])]`, to count
+all matching positions. Standalone `match(...)` is also an inclusive shorthand.
+
+
 ## Recompiling the ANTLR parser
 
 ```

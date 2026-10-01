@@ -8,14 +8,20 @@ from program import *
 
 
 class MyCraspVisitor(CRaspVisitor):
-    imports: list[str] = []
+    def __init__(self):
+        super().__init__()
+        self.imports = []
+        self.c_star = False
 
     def visitProgram(self, ctx):
         stmts = [self.visit(s) for s in ctx.statement()]
         stmts = [s for s in stmts if s is not None]
-        return Program(stmts, self.imports)
+        return Program(stmts, self.imports, self.c_star)
 
     def visitStatement(self, ctx):
+        if ctx.CSTAR():
+            self.c_star = True
+            return None
         if ctx.IMPORT():
             # Handle the import statement: 'IMPORT VARIABLE'
             var_name = ctx.VARIABLE().getText()
@@ -105,13 +111,19 @@ class MyCraspVisitor(CRaspVisitor):
 
     def visitCount_expr(self, ctx):
         if ctx.COUNT():
-            if ctx.VARIABLE():  # means it's: COUNT '[' VARIABLE ']' bool_expr
-                var = ctx.VARIABLE().getText()
-                expr = self.visit(ctx.bool_expr())
-                return GuardedCount(var, expr)
-            else:  # just: COUNT bool_expr
-                expr = self.visit(ctx.bool_expr())
-                return Count(expr)
+            expr = self.visit(ctx.bool_expr()) if ctx.bool_expr() else BoolLiteral(True)
+            if ctx.match_expr():
+                bound = ctx.match_bound()
+                if bound and [name.getText() for name in bound.VARIABLE()] != ["j", "i"]:
+                    raise ValueError("A match count bound must be j < i or j <= i")
+                return Match(
+                    expr=expr,
+                    predicate=self.visit(ctx.match_expr()),
+                    inclusive=bound is None or bound.LEQ() is not None
+                )
+            if ctx.VARIABLE():
+                return GuardedCount(expr=expr, guard=ctx.VARIABLE().getText())
+            return Count(expr)
 
         elif ctx.IF():
             return IfExpr(
@@ -154,6 +166,13 @@ class MyCraspVisitor(CRaspVisitor):
                 right=self.visit(ctx.count_expr(1))
             )
 
+        elif ctx.match_expr():
+            return Match(
+                predicate=self.visit(ctx.match_expr()),
+                expr=BoolLiteral(True),
+                inclusive=True
+            )
+
         elif ctx.INT_LITERAL():
             return CountLiteral(int(ctx.INT_LITERAL().getText()))
 
@@ -162,6 +181,14 @@ class MyCraspVisitor(CRaspVisitor):
 
         elif ctx.LPAREN():
             return self.visit(ctx.count_expr(0))
+
+
+    def visitMatch_expr(self, ctx):
+        constraints = [
+            tuple(int(value.getText()) for value in item.signed_integer())
+            for item in ctx.match_constraints().offset_list()
+        ]
+        return MatchPredicate(constraints)
 
 
 def parse_file(filename) -> Program:
